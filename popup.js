@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const supplementaryText = document.getElementById('supplementary-text');
   const translateButton = document.getElementById('translate-button');
   const modelSelect = document.getElementById('model-select'); // モデル選択ドロップダウンの要素を取得
+  const historyList = document.getElementById('history-list'); // 翻訳履歴リストの要素を取得
+
+  const TRANSLATION_HISTORY_KEY = 'translationHistory'; // background.jsと合わせる
 
   let models = {}; // models.jsonから読み込んだモデル情報を保持する変数
 
@@ -197,4 +200,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // models.jsonを読み込む
   loadModels();
+
+  // 翻訳履歴を読み込んで表示
+  chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
+    const history = result[TRANSLATION_HISTORY_KEY] || [];
+    console.log('Translation history loaded:', history); // 読み込まれたデータを確認するログを追加
+    displayHistory(history);
+  });
+
+  // 翻訳履歴を表示する関数
+  function displayHistory(history) {
+    historyList.innerHTML = ''; // 現在のリストをクリア
+    if (history.length === 0) {
+      historyList.innerHTML = '<p>No translation history yet.</p>';
+      return;
+    }
+
+    history.forEach(item => {
+      const historyItemDiv = document.createElement('div');
+      historyItemDiv.classList.add('history-item'); // スタイルのためのクラスを追加
+      historyItemDiv.innerHTML = `
+        <div class="history-source">${escapeHTML(item.sourceText)}</div>
+        <div class="history-translated">${escapeHTML(item.translatedText)}</div>
+        <div class="history-meta">
+          ${item.api} (${item.model}) - ${new Date(item.timestamp).toLocaleString()}
+        </div>
+      `;
+      // 履歴項目クリックでテキストエリアに反映（オプション）
+      // historyItemDiv.addEventListener('click', () => {
+      //   sourceTextInput.value = item.sourceText;
+      //   translatedTextInput.value = item.translatedText;
+      // });
+      historyList.appendChild(historyItemDiv);
+    });
+  }
+
+  // HTMLエスケープ処理（セキュリティのため）
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
 });

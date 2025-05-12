@@ -1,5 +1,8 @@
 let models = {}; // models.jsonから読み込んだモデル情報を保持する変数
 
+const TRANSLATION_HISTORY_KEY = 'translationHistory';
+const MAX_HISTORY_ITEMS = 20; // 履歴の最大件数
+
 // models.jsonを読み込む関数
 async function loadModels() {
   try {
@@ -145,6 +148,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       }
       sendResponse({ translation: translation });
+
+      // 翻訳履歴を保存
+      const historyItem = {
+        sourceText: text,
+        translatedText: translation,
+        sourceLang: sourceLang,
+        targetLang: targetLang,
+        api: api,
+        model: model,
+        timestamp: Date.now()
+      };
+
+      chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
+        const history = result[TRANSLATION_HISTORY_KEY] || [];
+        history.unshift(historyItem); // 配列の先頭に追加
+        if (history.length > MAX_HISTORY_ITEMS) {
+          history.pop(); // 最大件数を超えたら古いものから削除
+        }
+        chrome.storage.sync.set({ [TRANSLATION_HISTORY_KEY]: history }, () => {
+          console.log('Translation history saved:', history); // 保存されたデータを確認するログを追加
+        });
+      });
     })
     .catch(error => {
       console.error('Translation fetch error:', error);
