@@ -57,21 +57,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       headers['Authorization'] = `Bearer ${apiKey}`;
       body = {
         model: model, // リクエストで受け取ったモデルを使用
-        messages: [{ role: 'user', content: prompt }],
+        messages: [
+          { role: 'system', content: 'You are a translation assistant. Provide only the translated text without any additional comments or explanations.' }, // システムプロンプトを追加
+          { role: 'user', content: prompt }
+        ],
         temperature: 0.3, // Adjust for desired creativity/accuracy
       };
     } else if (api === 'gemini') {
       // Note: The Gemini API endpoint and request structure might differ.
       // This is a placeholder and needs to be adjusted based on the actual Gemini API documentation.
-      // Gemini APIではモデル名がURLに含まれる場合とbodyに含まれる場合があるため、APIドキュメントに合わせて調整が必要
-      // ここではbodyに含める例を示すが、実際のAPIに合わせて修正が必要
+      // Gemini APIでのシステムプロンプトの指定方法はAPIドキュメントに依存します。
+      // Gemini APIでのシステムプロンプトの指定方法はAPIドキュメントに依存します。
+      // ここでは、ユーザープロンプトの前にシステム的な指示を追加する例を示します。
       apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`; // モデル名をURLに含める例
       body = {
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
+        contents: [
+          { role: 'user', parts: [{ text: 'Provide only the translated text without any additional comments or explanations.' }] }, // システム的な指示をuserロールで追加
+          { role: 'user', parts: [{ text: prompt }] } // 実際のユーザープロンプトをuserロールで追加
+        ],
         // generationConfig: { // Optional: configure generation parameters
         //   temperature: 0.3,
         // }
