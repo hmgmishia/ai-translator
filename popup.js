@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Load saved API keys and preferences
+  // Load saved API keys and preferences and selected text
   chrome.storage.sync.get(['apiKeyChatGPT', 'apiKeyGemini', 'selectedAPI', 'sourceLang', 'targetLang', 'selectedModel'], (data) => {
     if (data.apiKeyChatGPT) {
       apiKeyChatGPTInput.value = data.apiKeyChatGPT;
@@ -72,6 +72,19 @@ document.addEventListener('DOMContentLoaded', () => {
       targetLanguageSelect.value = data.targetLang;
     }
     // selectedModelはupdateModelSelectで処理される
+
+    // ポップアップが開かれたときに保存された選択テキストを読み込み、自動翻訳を実行
+    chrome.storage.local.get(['selectedTextForTranslation'], (localData) => {
+      if (localData.selectedTextForTranslation) {
+        sourceTextInput.value = localData.selectedTextForTranslation;
+        // テキストを読み込んだらストレージから削除
+        chrome.storage.local.remove('selectedTextForTranslation', () => {
+          console.log('Selected text removed from local storage.');
+        });
+        // 自動的に翻訳ボタンをクリック
+        translateButton.click();
+      }
+    });
   });
 
   // Save API keys

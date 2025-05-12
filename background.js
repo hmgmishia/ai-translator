@@ -32,6 +32,25 @@ chrome.runtime.onStartup.addListener(() => {
   loadModels();
 });
 
+// 右クリックメニューを作成
+chrome.contextMenus.create({
+  id: "translateSelectedText",
+  title: "選択したテキストを翻訳",
+  contexts: ["selection"] // テキスト選択時に表示
+});
+
+// 右クリックメニューがクリックされたときの処理
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "translateSelectedText" && info.selectionText) {
+    // 選択されたテキストをストレージに保存
+    chrome.storage.local.set({ selectedTextForTranslation: info.selectionText }, () => {
+      console.log('Selected text saved:', info.selectionText);
+      // ポップアップを開く
+      chrome.action.openPopup();
+    });
+  }
+});
+
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'translate') {
@@ -67,13 +86,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Note: The Gemini API endpoint and request structure might differ.
       // This is a placeholder and needs to be adjusted based on the actual Gemini API documentation.
       // Gemini APIでのシステムプロンプトの指定方法はAPIドキュメントに依存します。
-      // Gemini APIでのシステムプロンプトの指定方法はAPIドキュメントに依存します。
-      // ここでは、ユーザープロンプトの前にシステム的な指示を追加する例を示します。
+      // ドキュメントに基づき、system_instructionフィールドを使用します。
       apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`; // モデル名をURLに含める例
       body = {
+        system_instruction: { parts: [{ text: 'You are a translation assistant. Provide only the translated text without any additional comments or explanations.' }] }, // system_instructionフィールドでシステムプロンプトを指定
         contents: [
-          { role: 'user', parts: [{ text: 'Provide only the translated text without any additional comments or explanations.' }] }, // システム的な指示をuserロールで追加
-          { role: 'user', parts: [{ text: prompt }] } // 実際のユーザープロンプトをuserロールで追加
+          { role: 'user', parts: [{ text: prompt }] } // 実際のユーザープロンプト
         ],
         // generationConfig: { // Optional: configure generation parameters
         //   temperature: 0.3,
