@@ -8,10 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const swapLanguagesButton = document.getElementById('swap-languages');
   const sourceTextInput = document.getElementById('source-text');
   const translatedTextInput = document.getElementById('translated-text');
-  const supplementaryText = document.getElementById('supplementary-text');
+  const supplementaryTextInput = document.getElementById('supplementary-text'); // 補足情報入力テキストボックスの要素を取得
   const translateButton = document.getElementById('translate-button');
   const modelSelect = document.getElementById('model-select'); // モデル選択ドロップダウンの要素を取得
   const historyList = document.getElementById('history-list'); // 翻訳履歴リストの要素を取得
+  const clearHistoryButton = document.getElementById('clear-history-button'); // 履歴クリアボタンの要素を取得
 
   const TRANSLATION_HISTORY_KEY = 'translationHistory'; // background.jsと合わせる
 
@@ -165,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
           {
             action: 'translate',
             text: sourceText,
-            supplementaryText: supplementaryText.value, // 補足情報を追加
+            supplementaryText: supplementaryTextInput.value, // 補足情報を追加
             sourceLang: sourceLang,
             targetLang: targetLang,
             api: selectedAPI,
@@ -226,12 +227,26 @@ document.addEventListener('DOMContentLoaded', () => {
           ${item.api} (${item.model}) - ${new Date(item.timestamp).toLocaleString()}
         </div>
       `;
-      // 履歴項目クリックでテキストエリアに反映（オプション）
-      // historyItemDiv.addEventListener('click', () => {
-      //   sourceTextInput.value = item.sourceText;
-      //   translatedTextInput.value = item.translatedText;
-      // });
+      // 履歴項目クリックでテキストエリアに反映
+      historyItemDiv.addEventListener('click', () => {
+        sourceTextInput.value = item.sourceText;
+        translatedTextInput.value = item.translatedText;
+        // 補足情報テキストエリアもあれば反映
+        if (supplementaryTextInput) {
+          supplementaryTextInput.value = (item.supplementaryText !== null && item.supplementaryText !== undefined) ? item.supplementaryText : '';
+        }
+      });
       historyList.appendChild(historyItemDiv);
+    });
+  }
+
+  // 履歴クリアボタンのクリックイベントリスナー
+  if (clearHistoryButton) {
+    clearHistoryButton.addEventListener('click', () => {
+      chrome.storage.sync.remove(TRANSLATION_HISTORY_KEY, () => {
+        console.log('Translation history cleared.');
+        displayHistory([]); // 表示をクリア
+      });
     });
   }
 
@@ -241,4 +256,19 @@ document.addEventListener('DOMContentLoaded', () => {
     div.appendChild(document.createTextNode(str));
     return div.innerHTML;
   }
+
+  // background.jsからの履歴更新通知を受け取る
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'updateHistory') {
+      console.log('Received updateHistory message from background.js');
+      try {
+        chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
+          const history = result[TRANSLATION_HISTORY_KEY] || [];
+          displayHistory(history);
+        });
+      } catch (error) {
+        console.error('Error handling updateHistory message:', error);
+      }
+    }
+  });
 });

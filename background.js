@@ -153,6 +153,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const historyItem = {
         sourceText: text,
         translatedText: translation,
+        supplementaryText: supplementaryText, // 補足情報を追加
         sourceLang: sourceLang,
         targetLang: targetLang,
         api: api,
@@ -162,13 +163,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
         const history = result[TRANSLATION_HISTORY_KEY] || [];
+        
         history.unshift(historyItem); // 配列の先頭に追加
+
         if (history.length > MAX_HISTORY_ITEMS) {
           history.pop(); // 最大件数を超えたら古いものから削除
         }
+        
         chrome.storage.sync.set({ [TRANSLATION_HISTORY_KEY]: history }, () => {
           console.log('Translation history saved:', history); // 保存されたデータを確認するログを追加
+          
+          // ポップアップに履歴更新を通知
+          chrome.runtime.sendMessage({ action: 'updateHistory' }, (response) => {
+            if (chrome.runtime.lastError) {
+              console.warn('Popup is not open, cannot update history:', chrome.runtime.lastError.message);
+            }
+          });
+
         });
+
       });
     })
     .catch(error => {
