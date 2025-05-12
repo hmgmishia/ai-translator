@@ -54,7 +54,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'translate') {
-    const { text, sourceLang, targetLang, api, model, apiKey } = request; // modelパラメータを追加
+    const { text, supplementaryText, sourceLang, targetLang, api, model, apiKey } = request; // supplementaryTextパラメータを追加
 
     let apiUrl = '';
     let headers = {
@@ -64,6 +64,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     const sourceLangPrompt = sourceLang === 'auto' ? 'Detect language and translate' : `Translate from ${getLanguageName(sourceLang)}`;
     const prompt = `${sourceLangPrompt} to ${getLanguageName(targetLang)}: "${text}"`;
+
+    let systemInstruction = 'You are a translation assistant. Provide only the translated text without any additional comments or explanations.';
+    // 補足情報があればシステムプロンプトに追記
+    if (supplementaryText) {
+      systemInstruction += `\n\nTranslate the text according to the following supplementary information: "${supplementaryText}"`;
+    }
 
     // モデルがmodels.jsonに存在するか確認 (オプション)
     // if (!models[api] || !models[api].includes(model)) {
@@ -77,7 +83,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       body = {
         model: model, // リクエストで受け取ったモデルを使用
         messages: [
-          { role: 'system', content: 'You are a translation assistant. Provide only the translated text without any additional comments or explanations.' }, // システムプロンプトを追加
+          { role: 'system', content: systemInstruction }, // 補足情報を含むシステムプロンプト
           { role: 'user', content: prompt }
         ],
         temperature: 0.3, // Adjust for desired creativity/accuracy
@@ -85,13 +91,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (api === 'gemini') {
       // Note: The Gemini API endpoint and request structure might differ.
       // This is a placeholder and needs to be adjusted based on the actual Gemini API documentation.
-      // Gemini APIでのシステムプロンプトの指定方法はAPIドキュメントに依存します。
       // ドキュメントに基づき、system_instructionフィールドを使用します。
       apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`; // モデル名をURLに含める例
       body = {
-        system_instruction: { parts: [{ text: 'You are a translation assistant. Provide only the translated text without any additional comments or explanations.' }] }, // system_instructionフィールドでシステムプロンプトを指定
+        system_instruction: { parts: [{ text: systemInstruction }] }, // 補足情報を含むsystem_instructionフィールド
         contents: [
-          { role: 'user', parts: [{ text: prompt }] } // 実際のユーザープロンプト
+          { role: 'user', parts: [{ text: prompt }] }
         ],
         // generationConfig: { // Optional: configure generation parameters
         //   temperature: 0.3,

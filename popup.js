@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const swapLanguagesButton = document.getElementById('swap-languages');
   const sourceTextInput = document.getElementById('source-text');
   const translatedTextInput = document.getElementById('translated-text');
+  const supplementaryText = document.getElementById('supplementary-text');
   const translateButton = document.getElementById('translate-button');
   const modelSelect = document.getElementById('model-select'); // モデル選択ドロップダウンの要素を取得
 
@@ -161,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
           {
             action: 'translate',
             text: sourceText,
+            supplementaryText: supplementaryText.value, // 補足情報を追加
             sourceLang: sourceLang,
             targetLang: targetLang,
             api: selectedAPI,
