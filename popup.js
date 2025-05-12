@@ -9,9 +9,53 @@ document.addEventListener('DOMContentLoaded', () => {
   const sourceTextInput = document.getElementById('source-text');
   const translatedTextInput = document.getElementById('translated-text');
   const translateButton = document.getElementById('translate-button');
+  const modelSelect = document.getElementById('model-select'); // モデル選択ドロップダウンの要素を取得
+
+  let models = {}; // models.jsonから読み込んだモデル情報を保持する変数
+
+  // models.jsonを読み込む関数
+  async function loadModels() {
+    try {
+      const response = await fetch(chrome.runtime.getURL('models.json'));
+      if (!response.ok) {
+        throw new Error(`Failed to load models.json: ${response.statusText}`);
+      }
+      models = await response.json();
+      console.log('Models loaded:', models);
+      updateModelSelect(); // モデル選択ドロップダウンを更新
+    } catch (error) {
+      console.error('Error loading models.json:', error);
+    }
+  }
+
+  // モデル選択ドロップダウンを更新する関数
+  function updateModelSelect() {
+    const selectedAPI = apiSelect.value;
+    const apiModels = models[selectedAPI] || [];
+
+    // 現在のオプションをクリア
+    modelSelect.innerHTML = '';
+
+    // 新しいオプションを追加
+    apiModels.forEach(model => {
+      const option = document.createElement('option');
+      option.value = model;
+      option.textContent = model;
+      modelSelect.appendChild(option);
+    });
+
+    // 保存されているモデルを選択、なければ最初のモデルを選択
+    chrome.storage.sync.get(['selectedModel'], (data) => {
+      if (data.selectedModel && apiModels.includes(data.selectedModel)) {
+        modelSelect.value = data.selectedModel;
+      } else if (apiModels.length > 0) {
+        modelSelect.value = apiModels[0];
+      }
+    });
+  }
 
   // Load saved API keys and preferences
-  chrome.storage.sync.get(['apiKeyChatGPT', 'apiKeyGemini', 'selectedAPI', 'sourceLang', 'targetLang'], (data) => {
+  chrome.storage.sync.get(['apiKeyChatGPT', 'apiKeyGemini', 'selectedAPI', 'sourceLang', 'targetLang', 'selectedModel'], (data) => {
     if (data.apiKeyChatGPT) {
       apiKeyChatGPTInput.value = data.apiKeyChatGPT;
     }
@@ -27,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (data.targetLang) {
       targetLanguageSelect.value = data.targetLang;
     }
+    // selectedModelはupdateModelSelectで処理される
   });
 
   // Save API keys
@@ -38,9 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Save selected API
+  // Save selected API and update models
   apiSelect.addEventListener('change', () => {
     chrome.storage.sync.set({ selectedAPI: apiSelect.value });
+    updateModelSelect(); // APIが変更されたらモデルリストを更新
+  });
+
+  // Save selected model
+  modelSelect.addEventListener('change', () => {
+    chrome.storage.sync.set({ selectedModel: modelSelect.value });
   });
 
   // Save selected languages
@@ -67,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   translateButton.addEventListener('click', async () => {
     const sourceText = sourceTextInput.value.trim();
     const selectedAPI = apiSelect.value;
+    const selectedModel = modelSelect.value; // 選択されたモデルを取得
     const sourceLang = sourceLanguageSelect.value;
     const targetLang = targetLanguageSelect.value;
 
@@ -99,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sourceLang: sourceLang,
             targetLang: targetLang,
             api: selectedAPI,
+            model: selectedModel, // 選択されたモデルを渡す
             apiKey: apiKey
           },
           (response) => {
@@ -126,4 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // models.jsonを読み込む
+  loadModels();
 });
