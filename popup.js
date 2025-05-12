@@ -241,6 +241,30 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       historyList.appendChild(historyItemDiv);
     });
+
+    // 削除ボタンのイベントリスナーを登録
+    const deleteButtons = document.querySelectorAll('.delete-history-item');
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', (event) => {
+        const indexToDelete = parseInt(event.target.dataset.index, 10);
+        deleteHistoryItem(indexToDelete);
+        event.stopPropagation(); // 履歴項目クリックイベントが発火しないようにstopPropagation()
+      });
+    });
+  }
+
+  // 履歴項目を削除する関数
+  function deleteHistoryItem(indexToDelete) {
+    chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
+      let history = result[TRANSLATION_HISTORY_KEY] || [];
+      if (indexToDelete >= 0 && indexToDelete < history.length) {
+        history.splice(indexToDelete, 1); // 指定されたインデックスの項目を削除
+        chrome.storage.sync.set({ [TRANSLATION_HISTORY_KEY]: history }, () => {
+          console.log('Translation history item deleted.');
+          displayHistory(history); // 履歴を再表示
+        });
+      }
+    });
   }
 
   // 履歴クリアボタンのクリックイベントリスナー
