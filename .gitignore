@@ -1,0 +1,26 @@
+# Operating System generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.idea/
+
+# Node modules (if you decide to use npm)
+node_modules/
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output (if you have a build process)
+dist/
+build/
+
+# Optional: API keys if stored in files (not recommended for extensions)
+# api_keys.js
+# .env
