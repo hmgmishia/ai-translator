@@ -15,8 +15,8 @@
           <option value="chatgpt">ChatGPT</option>
           <option value="gemini">Gemini</option>
         </select>
-        <label for="model-select">Model:</label> <!-- モデル選択ラベルを追加 -->
-        <select id="model-select"></select> <!-- モデル選択ドロップダウンを追加 -->
+        <label for="model-select">Model:</label>
+        <select id="model-select"></select>
       </div>
     </div>
 
@@ -48,11 +48,12 @@
 
       <div class="text-areas">
         <textarea id="source-text" placeholder="Enter text to translate"></textarea>
-        <textarea id="supplementary-text" placeholder="Enter supplementary information (optional)"></textarea> <!-- 補足情報入力テキストエリアを追加 -->
+        <textarea id="supplementary-text" placeholder="Enter supplementary information (optional)"></textarea>
         <textarea id="translated-text" placeholder="Translation" readonly></textarea>
       </div>
 
-      <button id="translate-button">Translate</button> <!-- ボタンのテキストを元に戻す -->
+      <button id="translate-button">Translate</button>
+      <button id="clear-text-button">Clear Text</button>
     </div>
 
     <div class="settings">
@@ -65,7 +66,7 @@
 
     <div class="history-section">
       <h2>Translation History</h2>
-      <button id="clear-history-button">Clear History</button> <!-- 履歴クリアボタンを追加 -->
+      <button id="clear-history-button">Clear History</button>
       <div id="history-list">
         <!-- Translation history items will be added here by popup.js -->
       </div>

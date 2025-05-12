@@ -8,17 +8,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const swapLanguagesButton = document.getElementById('swap-languages');
   const sourceTextInput = document.getElementById('source-text');
   const translatedTextInput = document.getElementById('translated-text');
-  const supplementaryTextInput = document.getElementById('supplementary-text'); // 補足情報入力テキストボックスの要素を取得
+  const supplementaryTextInput = document.getElementById('supplementary-text');
   const translateButton = document.getElementById('translate-button');
-  const modelSelect = document.getElementById('model-select'); // モデル選択ドロップダウンの要素を取得
-  const historyList = document.getElementById('history-list'); // 翻訳履歴リストの要素を取得
-  const clearHistoryButton = document.getElementById('clear-history-button'); // 履歴クリアボタンの要素を取得
+  const modelSelect = document.getElementById('model-select');
+  const historyList = document.getElementById('history-list');
+  const clearHistoryButton = document.getElementById('clear-history-button');
+  const clearTranslationButton = document.getElementById('clear-text-button');
 
-  const TRANSLATION_HISTORY_KEY = 'translationHistory'; // background.jsと合わせる
+  const TRANSLATION_HISTORY_KEY = 'translationHistory';
+  const MAX_HISTORY_ITEMS = 20;
 
-  let models = {}; // models.jsonから読み込んだモデル情報を保持する変数
+  let models = {};
 
-  // models.jsonを読み込む関数
   async function loadModels() {
     try {
       const response = await fetch(chrome.runtime.getURL('models.json'));
@@ -27,21 +28,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       models = await response.json();
       console.log('Models loaded:', models);
-      updateModelSelect(); // モデル選択ドロップダウンを更新
+      updateModelSelect();
     } catch (error) {
       console.error('Error loading models.json:', error);
     }
   }
 
-  // モデル選択ドロップダウンを更新する関数
   function updateModelSelect() {
     const selectedAPI = apiSelect.value;
     const apiModels = models[selectedAPI] || [];
 
-    // 現在のオプションをクリア
     modelSelect.innerHTML = '';
 
-    // 新しいオプションを追加
     apiModels.forEach(model => {
       const option = document.createElement('option');
       option.value = model;
@@ -49,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
       modelSelect.appendChild(option);
     });
 
-    // 保存されているモデルを選択、なければ最初のモデルを選択
     chrome.storage.sync.get(['selectedModel'], (data) => {
       if (data.selectedModel && apiModels.includes(data.selectedModel)) {
         modelSelect.value = data.selectedModel;
@@ -59,38 +56,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Load saved API keys and preferences and selected text
-  chrome.storage.sync.get(['apiKeyChatGPT', 'apiKeyGemini', 'selectedAPI', 'sourceLang', 'targetLang', 'selectedModel'], (data) => {
-    if (data.apiKeyChatGPT) {
-      apiKeyChatGPTInput.value = data.apiKeyChatGPT;
-    }
-    if (data.apiKeyGemini) {
-      apiKeyGeminiInput.value = data.apiKeyGemini;
-    }
-    if (data.selectedAPI) {
-      apiSelect.value = data.selectedAPI;
-    }
-    if (data.sourceLang) {
-      sourceLanguageSelect.value = data.sourceLang;
-    }
-    if (data.targetLang) {
-      targetLanguageSelect.value = data.targetLang;
-    }
-    // selectedModelはupdateModelSelectで処理される
+  loadSavedData();
 
-    // ポップアップが開かれたときに保存された選択テキストを読み込み、自動翻訳を実行
+  // Load saved API keys and preferences and selected text
+  function loadSavedData() {
+    chrome.storage.sync.get(['apiKeyChatGPT', 'apiKeyGemini', 'selectedAPI', 'sourceLang', 'targetLang', 'selectedModel'], (data) => {
+      if (data.apiKeyChatGPT) {
+        apiKeyChatGPTInput.value = data.apiKeyChatGPT;
+      }
+      if (data.apiKeyGemini) {
+        apiKeyGeminiInput.value = data.apiKeyGemini;
+      }
+      if (data.selectedAPI) {
+        apiSelect.value = data.selectedAPI;
+      }
+      if (data.sourceLang) {
+        sourceLanguageSelect.value = data.sourceLang;
+      }
+      if (data.targetLang) {
+        targetLanguageSelect.value = data.targetLang;
+      }
+      // selectedModelはupdateModelSelectで処理される
+
+      loadSelectedText();
+    });
+  }
+
+  function loadSelectedText() {
     chrome.storage.local.get(['selectedTextForTranslation'], (localData) => {
       if (localData.selectedTextForTranslation) {
         sourceTextInput.value = localData.selectedTextForTranslation;
-        // テキストを読み込んだらストレージから削除
         chrome.storage.local.remove('selectedTextForTranslation', () => {
           console.log('Selected text removed from local storage.');
         });
-        // 自動的に翻訳ボタンをクリック
-        translateButton.click();
       }
     });
-  });
+  }
 
   // Save API keys
   saveKeysButton.addEventListener('click', () => {
@@ -135,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Translate text
   translateButton.addEventListener('click', async () => {
     const sourceText = sourceTextInput.value.trim();
+    const supplementaryTextValue = supplementaryTextInput.value.trim();
     const selectedAPI = apiSelect.value;
     const selectedModel = modelSelect.value; // 選択されたモデルを取得
     const sourceLang = sourceLanguageSelect.value;
@@ -166,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
           {
             action: 'translate',
             text: sourceText,
-            supplementaryText: supplementaryTextInput.value, // 補足情報を追加
+            supplementaryText: supplementaryTextValue,
             sourceLang: sourceLang,
             targetLang: targetLang,
             api: selectedAPI,
@@ -217,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    history.forEach(item => {
+    history.forEach((item, index) => {
       const historyItemDiv = document.createElement('div');
       historyItemDiv.classList.add('history-item'); // スタイルのためのクラスを追加
       historyItemDiv.innerHTML = `
@@ -226,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="history-meta">
           ${item.api} (${item.model}) - ${new Date(item.timestamp).toLocaleString()}
         </div>
+        <button class="delete-history-item" data-index="${index}">Delete</button>
       `;
       // 履歴項目クリックでテキストエリアに反映
       historyItemDiv.addEventListener('click', () => {
@@ -233,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         translatedTextInput.value = item.translatedText;
         // 補足情報テキストエリアもあれば反映
         if (supplementaryTextInput) {
-          supplementaryTextInput.value = (item.supplementaryText !== null && item.supplementaryText !== undefined) ? item.supplementaryText : '';
+          supplementaryTextInput.value = item.supplementaryText || '';
         }
       });
       historyList.appendChild(historyItemDiv);
@@ -241,14 +244,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 履歴クリアボタンのクリックイベントリスナー
-  if (clearHistoryButton) {
-    clearHistoryButton.addEventListener('click', () => {
-      chrome.storage.sync.remove(TRANSLATION_HISTORY_KEY, () => {
-        console.log('Translation history cleared.');
-        displayHistory([]); // 表示をクリア
-      });
+  clearHistoryButton.addEventListener('click', () => {
+    chrome.storage.sync.remove(TRANSLATION_HISTORY_KEY, () => {
+      console.log('Translation history cleared.');
+      displayHistory([]); // 表示をクリア
     });
-  }
+  });
+
+  // 翻訳内容クリアボタンのクリックイベントリスナー
+  const clearTextButton = document.getElementById('clear-text-button');
+  clearTextButton.addEventListener('click', () => {
+    sourceTextInput.value = '';
+    translatedTextInput.value = '';
+    if (supplementaryTextInput) {
+      supplementaryTextInput.value = '';
+    }
+  });
 
   // HTMLエスケープ処理（セキュリティのため）
   function escapeHTML(str) {
