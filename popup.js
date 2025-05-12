@@ -13,11 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const modelSelect = document.getElementById('model-select');
   const historyList = document.getElementById('history-list');
   const clearHistoryButton = document.getElementById('clear-history-button');
-  const clearTranslationButton = document.getElementById('clear-text-button');
+  const clearTextButton = document.getElementById('clear-text-button');
 
   const TRANSLATION_HISTORY_KEY = 'translationHistory';
   const MAX_HISTORY_ITEMS = 20;
-
+  
+  let copyTranslationButton;
   let models = {};
 
   async function loadModels() {
@@ -120,18 +121,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   targetLanguageSelect.addEventListener('change', () => {
     chrome.storage.sync.set({ targetLang: targetLanguageSelect.value });
-  });
+    });
 
-  // Swap languages
-  swapLanguagesButton.addEventListener('click', () => {
-    const sourceLang = sourceLanguageSelect.value;
-    const targetLang = targetLanguageSelect.value;
-    if (sourceLang !== 'auto') { // Cannot swap if source is "Detect Language"
-        sourceLanguageSelect.value = targetLang;
-        targetLanguageSelect.value = sourceLang;
-        chrome.storage.sync.set({ sourceLang: targetLang, targetLang: sourceLang });
-    }
-  });
+    // Swap languages
+    swapLanguagesButton.addEventListener('click', () => {
+        const sourceLang = sourceLanguageSelect.value;
+        const targetLang = targetLanguageSelect.value;
+        if (sourceLang !== 'auto') { // Cannot swap if source is "Detect Language"
+            sourceLanguageSelect.value = targetLang;
+            targetLanguageSelect.value = sourceLang;
+            chrome.storage.sync.set({ sourceLang: targetLang, targetLang: sourceLang });
+        }
+    });
 
   // Translate text
   translateButton.addEventListener('click', async () => {
@@ -276,13 +277,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 翻訳内容クリアボタンのクリックイベントリスナー
-  const clearTextButton = document.getElementById('clear-text-button');
-  clearTextButton.addEventListener('click', () => {
+  const clearTextButtonListener = document.getElementById('clear-text-button');
+  clearTextButtonListener.addEventListener('click', () => {
     sourceTextInput.value = '';
     translatedTextInput.value = '';
     if (supplementaryTextInput) {
       supplementaryTextInput.value = '';
     }
+  });
+
+  // コピーボタンのクリックイベントリスナー
+  copyTranslationButton = document.getElementById('copy-translation-button');
+  copyTranslationButton.addEventListener('click', () => {
+    const translationText = translatedTextInput.value;
+    navigator.clipboard.writeText(translationText)
+      .then(() => {
+        console.log('Translation copied to clipboard!');
+      })
+      .catch(err => {
+        console.error('Failed to copy translation: ', err);
+      });
   });
 
   // HTMLエスケープ処理（セキュリティのため）
