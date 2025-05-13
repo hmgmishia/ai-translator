@@ -6,6 +6,14 @@
 
 A Chrome extension that provides translation using ChatGPT or Gemini AI models.
 
+### Screenshots
+
+![Screenshot 1](documents/1.png)
+*Main interface with translation in progress*
+
+![Screenshot 2](documents/2.png)
+*Translation history and settings*
+
 ### Security Information
 
 #### API Key Handling
@@ -59,6 +67,14 @@ MIT License
 ## Japanese
 
 Chrome拡張機能を使用してChatGPTまたはGeminiで翻訳を行うツールです。
+
+### スクリーンショット
+
+![スクリーンショット1](documents/1.png)
+*メインインターフェースと翻訳の実行*
+
+![スクリーンショット2](documents/2.png)
+*翻訳履歴と設定画面*
 
 ### セキュリティ情報
 
