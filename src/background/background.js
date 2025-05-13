@@ -1,6 +1,12 @@
 // 定数定義
 const TRANSLATION_HISTORY_KEY = 'translationHistory';
 const MAX_HISTORY_ITEMS = 20;
+const PATH_TO_MODELS_JSON = '/src/config/models.json';
+const NAME_MODEL_DEFAULT = 'gpt-4o-mini';
+const NAME_API_DEFAULT = 'gemini';
+
+const NAME_API_CHATGPT = 'chatgpt';
+const NAME_API_GEMINI = 'gemini';
 
 // 言語マッピング
 const LANGUAGE_MAP = {
@@ -13,29 +19,11 @@ const LANGUAGE_MAP = {
   'ko': 'Korean'
 };
 
-// グローバル状態
-let models = {};
-
 // 初期化関数
 async function initialize() {
   console.log('AI Translator extension initializing...');
-  await loadModels();
   setupContextMenu();
   setupDefaultSettings();
-}
-
-// モデル関連の機能
-async function loadModels() {
-  try {
-    const response = await fetch(chrome.runtime.getURL('/src/config/models.json'));
-    if (!response.ok) {
-      throw new Error(`Failed to load models.json: ${response.statusText}`);
-    }
-    models = await response.json();
-    console.log('Models loaded in background:', models);
-  } catch (error) {
-    console.error('Error loading models.json in background:', error);
-  }
 }
 
 // コンテキストメニューの設定
@@ -49,8 +37,8 @@ function setupContextMenu() {
 
 // デフォルト設定
 function setupDefaultSettings() {
-  chrome.storage.sync.set({ selectedModel: 'gpt-4o-mini' }, () => {
-    console.log('Default model set to gpt-4o-mini');
+  chrome.storage.sync.set({ selectedModel: NAME_MODEL_DEFAULT }, () => {
+    console.log('Default model set to', NAME_MODEL_DEFAULT);
   });
 }
 
@@ -101,7 +89,7 @@ function createTranslationConfig({ text, supplementaryText, sourceLang, targetLa
     systemInstruction += `\n\nTranslate the text according to the following supplementary information: "${supplementaryText}"`;
   }
 
-  if (api === 'chatgpt') {
+  if (api === NAME_API_CHATGPT) {
     return {
       url: 'https://api.openai.com/v1/chat/completions',
       headers: {
@@ -117,7 +105,7 @@ function createTranslationConfig({ text, supplementaryText, sourceLang, targetLa
         temperature: 0.3
       }
     };
-  } else if (api === 'gemini') {
+  } else if (api === NAME_API_GEMINI) {
     return {
       url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       headers: {
@@ -159,12 +147,12 @@ async function fetchTranslation(config) {
 
 // レスポンスから翻訳テキストを抽出
 function extractTranslation(data, api) {
-  if (api === 'chatgpt') {
+  if (api === NAME_API_CHATGPT) {
     if (data.choices?.[0]?.message?.content) {
       return data.choices[0].message.content.trim();
     }
     throw new Error('Unexpected response structure from ChatGPT API');
-  } else if (api === 'gemini') {
+  } else if (api === NAME_API_GEMINI) {
     if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
       return data.candidates[0].content.parts[0].text.trim();
     }
@@ -177,10 +165,19 @@ function extractTranslation(data, api) {
 async function saveTranslationHistory(historyItem) {
   const history = await getTranslationHistory();
   
-  history.unshift({
-    ...historyItem,
+  // 機密情報を含まない履歴アイテムを作成
+  const safeHistoryItem = {
+    sourceText: historyItem.sourceText.substring(0, 1000), // 長いテキストを制限
+    translatedText: historyItem.translatedText.substring(0, 1000),
+    supplementaryText: historyItem.supplementaryText ? historyItem.supplementaryText.substring(0, 500) : '',
+    sourceLang: historyItem.sourceLang,
+    targetLang: historyItem.targetLang,
+    api: historyItem.api,
+    model: historyItem.model,
     timestamp: Date.now()
-  });
+  };
+
+  history.unshift(safeHistoryItem);
 
   if (history.length > MAX_HISTORY_ITEMS) {
     history.pop();

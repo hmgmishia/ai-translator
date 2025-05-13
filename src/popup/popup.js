@@ -2,6 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // 定数定義
   const TRANSLATION_HISTORY_KEY = 'translationHistory';
   const MAX_HISTORY_ITEMS = 20;
+  const PATH_TO_MODELS_JSON = '/src/config/models.json';
+  const NAME_MODEL_DEFAULT = 'gpt-4o-mini';
+  const NAME_API_DEFAULT = 'gemini';
+
+  const NAME_API_CHATGPT = 'chatgpt';
+  const NAME_API_GEMINI = 'gemini';
 
   // DOM要素の取得
   const elements = {
@@ -43,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // モデル関連の機能
   async function loadModels() {
     try {
-      const response = await fetch(chrome.runtime.getURL('/src/config/models.json'));
+      const response = await fetch(chrome.runtime.getURL(PATH_TO_MODELS_JSON));
       if (!response.ok) {
         throw new Error(`Failed to load models.json: ${response.statusText}`);
       }
@@ -57,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateModelSelect() {
     const selectedAPI = elements.selects.api.value;
-    const apiModels = models[selectedAPI] || [];
+    const apiModels = models[selectedAPI].models || [];
 
     elements.selects.model.innerHTML = '';
     apiModels.forEach(model => {
@@ -93,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.selects.api.value = data.selectedAPI;
         updateModelSelect();
       } else {
-        const defaultAPI = 'chatgpt';
+        const defaultAPI = NAME_API_DEFAULT;
         elements.selects.api.value = defaultAPI;
         chrome.storage.sync.set({ selectedAPI: defaultAPI });
         updateModelSelect();
@@ -199,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const { selectedAPI } = config;
 
     chrome.storage.sync.get(['apiKeyChatGPT', 'apiKeyGemini'], async (keys) => {
-      const apiKey = selectedAPI === 'chatgpt' ? keys.apiKeyChatGPT : keys.apiKeyGemini;
+      const apiKey = selectedAPI === NAME_API_CHATGPT ? keys.apiKeyChatGPT : keys.apiKeyGemini;
 
       if (!apiKey) {
         elements.inputs.translatedText.value = `API key for ${selectedAPI} is not set.`;

@@ -1,13 +1,12 @@
 {
-  "chatgpt": [
-    "gpt-4o-mini",
-    "gpt-4.1-mini",
-    "gpt-4.1",
-    "o4-mini"
-  ],
-  "gemini": [
-    "gemini-2.0-flash",
-    "gemini-2.5-flash-preview-04-17",
-    "gemini-2.5-pro-preview-05-06"
-  ]
+  "chatgpt": {
+    "models": ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1", "o4-mini"],
+    "endpoint": "https://api.openai.com/v1/chat/completions",
+    "version": "v1"
+  },
+  "gemini": {
+    "models": ["gemini-2.0-flash", "gemini-2.5-flash-preview-04-17", "gemini-2.5-pro-preview-05-06"],
+    "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+    "version": "v1beta"
+  }
 }
