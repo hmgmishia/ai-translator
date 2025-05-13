@@ -27,7 +27,7 @@ async function initialize() {
 // モデル関連の機能
 async function loadModels() {
   try {
-    const response = await fetch(chrome.runtime.getURL('models.json'));
+    const response = await fetch(chrome.runtime.getURL('/src/config/models.json'));
     if (!response.ok) {
       throw new Error(`Failed to load models.json: ${response.statusText}`);
     }
