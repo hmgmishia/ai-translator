@@ -280,30 +280,100 @@ document.addEventListener('DOMContentLoaded', () => {
   function createHistoryItem(item, index) {
     const historyItemDiv = document.createElement('div');
     historyItemDiv.classList.add('history-item');
-    historyItemDiv.innerHTML = `
-      <div class="history-source">${escapeHTML(item.sourceText)}</div>
-      <div class="history-translated">${escapeHTML(item.translatedText)}</div>
-      <div class="history-meta">
-        ${item.api} (${item.model}) - ${new Date(item.timestamp).toLocaleString()}
+
+    const content = `
+      <div class="history-content">
+        <button class="history-item-delete">
+          <span class="button-text">削除</span>
+        </button>
+        <div class="history-languages">
+          ${getLanguageName(item.sourceLang)} → ${getLanguageName(item.targetLang)}
+        </div>
+        <div class="history-source">${escapeHTML(item.sourceText)}</div>
+        <div class="history-translated">${escapeHTML(item.translatedText)}</div>
+        <div class="history-meta">
+          <div class="history-model">${item.api}</div>
+          <div class="history-time">${formatTimestamp(item.timestamp)}</div>
+        </div>
       </div>
-      <button class="delete-history-item" data-index="${index}">Delete</button>
     `;
 
-    historyItemDiv.addEventListener('click', () => {
+    historyItemDiv.innerHTML = content;
+
+    // 履歴アイテムのクリックイベント（削除ボタン以外）
+    const historyContent = historyItemDiv.querySelector('.history-content');
+    historyContent.addEventListener('click', () => {
       elements.inputs.sourceText.value = item.sourceText;
       elements.inputs.translatedText.value = item.translatedText;
       if (elements.inputs.supplementaryText) {
         elements.inputs.supplementaryText.value = item.supplementaryText || '';
       }
+      // 言語の選択も復元
+      if (item.sourceLang && item.targetLang) {
+        elements.selects.sourceLanguage.value = item.sourceLang;
+        elements.selects.targetLanguage.value = item.targetLang;
+      }
     });
 
-    const deleteButton = historyItemDiv.querySelector('.delete-history-item');
-    deleteButton.addEventListener('click', (event) => {
-      deleteHistoryItem(index);
+    // 削除ボタンのイベント
+    const deleteButton = historyItemDiv.querySelector('.history-item-delete');
+    deleteButton.addEventListener('click', async (event) => {
       event.stopPropagation();
+      
+      // 削除アニメーションの追加
+      historyItemDiv.classList.add('deleting');
+      
+      // アニメーション完了を待ってから削除
+      await new Promise(resolve => setTimeout(resolve, 300)); // アニメーションの時間と同じ
+      
+      deleteHistoryItem(index);
     });
 
     return historyItemDiv;
+  }
+
+  // 言語名を取得する関数
+  function getLanguageName(langCode) {
+    const languages = {
+      'auto': '自動検出',
+      'en': '英語',
+      'ja': '日本語',
+      'es': 'スペイン語',
+      'fr': 'フランス語',
+      'de': 'ドイツ語',
+      'zh-CN': '中国語',
+      'ko': '韓国語'
+    };
+    return languages[langCode] || langCode;
+  }
+
+  // タイムスタンプを整形する関数
+  function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    
+    // 1分未満
+    if (diff < 60000) {
+      return 'たった今';
+    }
+    // 1時間未満
+    if (diff < 3600000) {
+      const minutes = Math.floor(diff / 60000);
+      return `${minutes}分前`;
+    }
+    // 24時間未満
+    if (diff < 86400000) {
+      const hours = Math.floor(diff / 3600000);
+      return `${hours}時間前`;
+    }
+    // それ以外
+    return date.toLocaleString('ja-JP', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   function deleteHistoryItem(index) {

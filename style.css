@@ -184,41 +184,255 @@ body {
 
 .history-section {
   margin-top: 20px;
-  padding-top: 15px;
-  border-top: 1px solid #ddd;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
 }
 
-.history-section h2 {
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.history-header h2 {
   font-size: 16px;
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #5f6368;
+  margin: 0;
+  color: #202124;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-header h2::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/svg/2000" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>');
+  opacity: 0.7;
+}
+
+#clear-history-button {
+  padding: 6px 12px;
+  background-color: #fff;
+  color: #d93025;  /* Googleの赤色 */
+  border: 1px solid rgba(217, 48, 37, 0.2);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+#clear-history-button:hover {
+  background-color: rgba(217, 48, 37, 0.04);
+  border-color: rgba(217, 48, 37, 0.3);
+  transform: translateY(-1px);
+}
+
+#clear-history-button:active {
+  transform: translateY(0);
+}
+
+#clear-history-button::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/svg/2000" viewBox="0 0 24 24" fill="none" stroke="%23d93025" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>');
+  opacity: 0.9;
+  transition: transform 0.2s ease;
+}
+
+#clear-history-button:hover::before {
+  transform: scale(1.1);
+}
+
+/* 削除確認時のスタイル */
+#clear-history-button.confirming {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+#history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+#history-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#history-list::-webkit-scrollbar-track {
+  background: #f1f3f4;
+  border-radius: 4px;
+}
+
+#history-list::-webkit-scrollbar-thumb {
+  background: #dadce0;
+  border-radius: 4px;
+}
+
+#history-list::-webkit-scrollbar-thumb:hover {
+  background: #c1c4c8;
 }
 
 .history-item {
   background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px;
-  margin-bottom: 10px;
-  cursor: pointer; /* クリック可能であることを示す */
-  transition: background-color 0.2s;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .history-item:hover {
-  background-color: #f0f0f0;
+  background-color: #f8f9fa;
+  border-color: #c1c4c8;
+  transform: translateY(-1px);
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.1);
+}
+
+.history-item-delete {
+  padding: 6px 12px;
+  background-color: #fff;
+  color: #d93025;  /* Googleの赤色 */
+  border: 1px solid rgba(217, 48, 37, 0.2);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.history-item-delete:hover {
+  background-color: rgba(217, 48, 37, 0.1);
+  transform: scale(1.1);
+}
+
+.history-item-delete:active {
+  transform: scale(0.95);
+}
+
+.history-content {
+  padding-right: 32px;
+}
+
+.history-languages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.history-languages::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/svg/2000" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>');
+  opacity: 0.5;
 }
 
 .history-source {
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-size: 14px;
+  color: #202124;
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 .history-translated {
-  margin-bottom: 5px;
+  font-size: 14px;
+  color: #1a73e8;
+  line-height: 1.4;
+  margin-bottom: 8px;
 }
 
 .history-meta {
-  font-size: 11px;
-  color: #777;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #5f6368;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f3f4;
+}
+
+.history-model {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.history-model::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/svg/2000" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>');
+  opacity: 0.5;
+}
+
+.history-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.history-time::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/svg/2000" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>');
+  opacity: 0.5;
+}
+
+.empty-history {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: #5f6368;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #dadce0;
+}
+
+.empty-history::before {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/svg/2000" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>');
+  opacity: 0.3;
 }
