@@ -1,3 +1,10 @@
+/**
+ * AI Translator Chrome Extension - Popup Script
+ * 
+ * このスクリプトはポップアップUIの制御を担当し、
+ * ユーザーインターフェース、翻訳機能、履歴管理を処理します。
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
   // 定数定義
   const TRANSLATION_HISTORY_KEY = 'translationHistory';
@@ -9,7 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const NAME_API_CHATGPT = 'chatgpt';
   const NAME_API_GEMINI = 'gemini';
 
-  // DOM要素の取得
+  /**
+   * UIの要素を管理するオブジェクト
+   * 入力フィールド、選択メニュー、ボタンへの参照を保持
+   */
   const elements = {
     inputs: {
       apiKeyChatGPT: document.getElementById('api-key-chatgpt'),
@@ -38,7 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // グローバル状態
   let models = {};
 
-  // 初期化
+  /**
+   * 拡張機能の初期化
+   * モデルのロード、保存データの読み込み、イベントリスナーの設定を行う
+   */
   async function initialize() {
     await loadModels();
     loadSavedData();
@@ -46,7 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTranslationHistory();
   }
 
-  // モデル関連の機能
+  /**
+   * 利用可能な翻訳モデルを読み込む
+   */
   async function loadModels() {
     try {
       const response = await fetch(chrome.runtime.getURL(PATH_TO_MODELS_JSON));
@@ -61,6 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  /**
+   * モデル選択メニューを更新
+   * 選択されたAPIに応じて利用可能なモデルを表示
+   */
   function updateModelSelect() {
     const selectedAPI = elements.selects.api.value;
     const apiModels = models[selectedAPI].models || [];
@@ -84,7 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // データ保存と読み込み
+  /**
+   * 保存されたデータを読み込む
+   * APIキー、選択されたAPI、言語設定などを復元
+   */
   function loadSavedData() {
     chrome.storage.sync.get([
       'apiKeyChatGPT',
@@ -111,6 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * コンテキストメニューから選択されたテキストを読み込む
+   */
   function loadSelectedText() {
     chrome.storage.local.get(['selectedTextForTranslation'], (localData) => {
       if (localData.selectedTextForTranslation) {
@@ -122,7 +147,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // イベントリスナーの設定
+  /**
+   * イベントリスナーを設定
+   * ユーザーインタラクションに対する処理を登録
+   */
   function setupEventListeners() {
     // API関連
     elements.buttons.saveKeys.addEventListener('click', saveAPIKeys);
@@ -145,7 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.buttons.copyTranslation.addEventListener('click', copyTranslation);
   }
 
-  // API関連のハンドラー
+  /**
+   * APIキーを保存
+   */
   function saveAPIKeys() {
     const apiKeyChatGPT = elements.inputs.apiKeyChatGPT.value.trim();
     const apiKeyGemini = elements.inputs.apiKeyGemini.value.trim();
@@ -154,6 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * API変更時の処理
+   */
   function handleAPIChange() {
     const selectedAPI = elements.selects.api.value;
     chrome.storage.sync.set({ selectedAPI }, () => {
@@ -161,11 +194,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * 選択されたモデルを保存
+   */
   function saveSelectedModel() {
     chrome.storage.sync.set({ selectedModel: elements.selects.model.value });
   }
 
-  // 言語関連の機能
+  /**
+   * 言語の入れ替え
+   */
   function swapLanguages() {
     const sourceLang = elements.selects.sourceLanguage.value;
     const targetLang = elements.selects.targetLanguage.value;
@@ -177,7 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 翻訳機能
+  /**
+   * 翻訳処理の開始
+   */
   async function handleTranslation() {
     const sourceText = elements.inputs.sourceText.value.trim();
     const supplementaryText = elements.inputs.supplementaryText.value.trim();
@@ -201,6 +241,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * 翻訳の実行
+   * @param {Object} config - 翻訳設定
+   */
   async function performTranslation(config) {
     const { selectedAPI } = config;
 
@@ -223,6 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * バックグラウンドスクリプトに翻訳リクエストを送信
+   * @param {Object} config - 翻訳設定
+   */
   function sendTranslationRequest(config) {
     chrome.runtime.sendMessage(
       {
@@ -239,6 +287,10 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
+  /**
+   * 翻訳レスポンスの処理
+   * @param {Object} response - バックグラウンドスクリプトからのレスポンス
+   */
   function handleTranslationResponse(response) {
     if (chrome.runtime.lastError) {
       console.error('Error sending message to background:', chrome.runtime.lastError.message);
@@ -260,7 +312,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 履歴管理
+  /**
+   * 翻訳履歴の読み込みと表示
+   */
   function loadTranslationHistory() {
     chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
       const history = result[TRANSLATION_HISTORY_KEY] || [];
@@ -269,6 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * 履歴の表示
+   * @param {Array} history - 履歴アイテムの配列
+   */
   function displayHistory(history) {
     elements.history.innerHTML = '';
     
@@ -283,6 +341,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * 履歴アイテムのHTML要素を作成
+   * @param {Object} item - 履歴アイテム
+   * @param {number} index - インデックス
+   * @returns {HTMLElement} 履歴アイテムの要素
+   */
   function createHistoryItem(item, index) {
     const historyItemDiv = document.createElement('div');
     historyItemDiv.classList.add('history-item');
@@ -338,7 +402,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return historyItemDiv;
   }
 
-  // 言語名を取得する関数
+  /**
+   * 言語コードから言語名を取得
+   * @param {string} langCode - 言語コード
+   * @returns {string} 言語名
+   */
   function getLanguageName(langCode) {
     const languages = {
       'auto': '自動検出',
@@ -353,27 +421,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return languages[langCode] || langCode;
   }
 
-  // タイムスタンプを整形する関数
+  /**
+   * タイムスタンプを整形
+   * @param {number} timestamp - UNIXタイムスタンプ
+   * @returns {string} 整形された時刻文字列
+   */
   function formatTimestamp(timestamp) {
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now - date;
     
-    // 1分未満
-    if (diff < 60000) {
-      return 'たった今';
-    }
-    // 1時間未満
-    if (diff < 3600000) {
-      const minutes = Math.floor(diff / 60000);
-      return `${minutes}分前`;
-    }
-    // 24時間未満
-    if (diff < 86400000) {
-      const hours = Math.floor(diff / 3600000);
-      return `${hours}時間前`;
-    }
-    // それ以外
+    if (diff < 60000) return 'たった今';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}分前`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}時間前`;
+    
     return date.toLocaleString('ja-JP', {
       month: 'short',
       day: 'numeric',
@@ -382,6 +443,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * 履歴アイテムの削除
+   * @param {number} index - 削除する履歴のインデックス
+   */
   function deleteHistoryItem(index) {
     chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
       let history = result[TRANSLATION_HISTORY_KEY] || [];
@@ -395,7 +460,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ユーティリティ機能
+  /**
+   * 履歴のクリア
+   */
   function clearHistory() {
     chrome.storage.sync.remove(TRANSLATION_HISTORY_KEY, () => {
       console.log('Translation history cleared.');
@@ -403,6 +470,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /**
+   * テキストフィールドのクリア
+   */
   function clearText() {
     elements.inputs.sourceText.value = '';
     elements.inputs.translatedText.value = '';
@@ -411,6 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  /**
+   * 翻訳テキストのコピー
+   */
   function copyTranslation() {
     const translationText = elements.inputs.translatedText.value;
     navigator.clipboard.writeText(translationText)
@@ -418,6 +491,11 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => console.error('Failed to copy translation: ', err));
   }
 
+  /**
+   * HTMLエスケープ
+   * @param {string} str - エスケープする文字列
+   * @returns {string} エスケープされた文字列
+   */
   function escapeHTML(str) {
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(str));

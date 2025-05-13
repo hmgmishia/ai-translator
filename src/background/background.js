@@ -1,3 +1,10 @@
+/**
+ * AI Translator Chrome Extension - Background Script
+ * 
+ * このスクリプトは拡張機能のバックグラウンドで動作し、
+ * 翻訳処理、履歴管理、APIとの通信を担当します。
+ */
+
 // 定数定義
 const TRANSLATION_HISTORY_KEY = 'translationHistory';
 const MAX_HISTORY_ITEMS = 20;
@@ -19,30 +26,31 @@ const LANGUAGE_MAP = {
   'ko': 'Korean'
 };
 
-// 初期化関数
+/**
+ * 拡張機能の初期化を行う
+ * コンテキストメニューとデフォルト設定をセットアップ
+ */
 async function initialize() {
   console.log('AI Translator extension initializing...');
   setupContextMenu();
   setupDefaultSettings();
 }
 
-// コンテキストメニューの設定
-function setupContextMenu() {
-  chrome.contextMenus.create({
-    id: "translateSelectedText",
-    title: "選択したテキストを翻訳",
-    contexts: ["selection"]
-  });
-}
-
-// デフォルト設定
+/**
+ * デフォルト設定を構成
+ * モデルの初期選択などを設定
+ */
 function setupDefaultSettings() {
   chrome.storage.sync.set({ selectedModel: NAME_MODEL_DEFAULT }, () => {
     console.log('Default model set to', NAME_MODEL_DEFAULT);
   });
 }
 
-// 翻訳機能
+/**
+ * 翻訳リクエストを処理
+ * @param {Object} request - 翻訳リクエストパラメータ
+ * @param {Function} sendResponse - レスポンス送信用コールバック
+ */
 async function handleTranslation(request, sendResponse) {
   const { text, supplementaryText, sourceLang, targetLang, api, model, apiKey } = request;
   
@@ -77,7 +85,11 @@ async function handleTranslation(request, sendResponse) {
   }
 }
 
-// 翻訳設定の作成
+/**
+ * 翻訳用の設定を作成
+ * @param {Object} params - 翻訳パラメータ
+ * @returns {Object} API呼び出し用の設定オブジェクト
+ */
 function createTranslationConfig({ text, supplementaryText, sourceLang, targetLang, api, model, apiKey }) {
   const sourceLangPrompt = sourceLang === 'auto' 
     ? 'Detect language and translate' 
@@ -123,7 +135,11 @@ function createTranslationConfig({ text, supplementaryText, sourceLang, targetLa
   throw new Error('Invalid API selected');
 }
 
-// 翻訳APIの呼び出し
+/**
+ * 翻訳APIを呼び出し
+ * @param {Object} config - API呼び出し設定
+ * @returns {Promise<Object>} APIレスポンス
+ */
 async function fetchTranslation(config) {
   const response = await fetch(config.url, {
     method: 'POST',
@@ -145,7 +161,12 @@ async function fetchTranslation(config) {
   return response.json();
 }
 
-// レスポンスから翻訳テキストを抽出
+/**
+ * APIレスポンスから翻訳テキストを抽出
+ * @param {Object} data - APIレスポンス
+ * @param {string} api - 使用中のAPI
+ * @returns {string} 翻訳されたテキスト
+ */
 function extractTranslation(data, api) {
   if (api === NAME_API_CHATGPT) {
     if (data.choices?.[0]?.message?.content) {
@@ -161,7 +182,10 @@ function extractTranslation(data, api) {
   throw new Error('Invalid API type');
 }
 
-// 履歴管理
+/**
+ * 翻訳履歴を保存
+ * @param {Object} historyItem - 保存する履歴アイテム
+ */
 async function saveTranslationHistory(historyItem) {
   const history = await getTranslationHistory();
   
@@ -189,11 +213,18 @@ async function saveTranslationHistory(historyItem) {
   notifyHistoryUpdate();
 }
 
+/**
+ * 翻訳履歴を取得
+ * @returns {Promise<Array>} 履歴アイテムの配列
+ */
 async function getTranslationHistory() {
   const result = await chrome.storage.sync.get([TRANSLATION_HISTORY_KEY]);
   return result[TRANSLATION_HISTORY_KEY] || [];
 }
 
+/**
+ * 履歴更新をポップアップに通知
+ */
 function notifyHistoryUpdate() {
   chrome.runtime.sendMessage({ action: 'updateHistory' }, (response) => {
     if (chrome.runtime.lastError) {
@@ -202,7 +233,11 @@ function notifyHistoryUpdate() {
   });
 }
 
-// ユーティリティ関数
+/**
+ * 言語コードから言語名を取得
+ * @param {string} code - 言語コード
+ * @returns {string} 言語名
+ */
 function getLanguageName(code) {
   return LANGUAGE_MAP[code] || code;
 }
