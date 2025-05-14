@@ -10,7 +10,12 @@
     "contextMenus"
   ],
   "web_accessible_resources": [{
-    "resources": ["src/config/*"],
+    "resources": [
+      "src/config/*",
+      "src/popup/mini-popup.html",
+      "src/popup/styles/mini-popup.css",
+      "src/popup/mini-popup.js"
+    ],
     "matches": ["<all_urls>"]
   }],
   "action": {

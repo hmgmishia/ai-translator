@@ -26,6 +26,9 @@ const LANGUAGE_MAP = {
   'ko': 'Korean'
 };
 
+// 現在のミニポップアップのウィンドウIDを保持
+let currentMiniPopupId = null;
+
 /**
  * 拡張機能の初期化を行う
  * コンテキストメニューとデフォルト設定をセットアップ
@@ -37,12 +40,27 @@ async function initialize() {
 }
 
 /**
- * デフォルト設定を構成
- * モデルの初期選択などを設定
+ * コンテキストメニューのセットアップ
+ */
+function setupContextMenu() {
+  chrome.contextMenus.create({
+    id: "translateSelectedText",
+    title: "選択したテキストを翻訳",
+    contexts: ["selection"]
+  });
+}
+
+/**
+ * デフォルト設定のセットアップ
  */
 function setupDefaultSettings() {
-  chrome.storage.sync.set({ selectedModel: NAME_MODEL_DEFAULT }, () => {
-    console.log('Default model set to', NAME_MODEL_DEFAULT);
+  chrome.storage.sync.get(['selectedAPI', 'selectedModel'], (data) => {
+    if (!data.selectedAPI) {
+      chrome.storage.sync.set({ selectedAPI: NAME_API_DEFAULT });
+    }
+    if (!data.selectedModel) {
+      chrome.storage.sync.set({ selectedModel: NAME_MODEL_DEFAULT });
+    }
   });
 }
 
@@ -248,10 +266,42 @@ chrome.runtime.onStartup.addListener(initialize);
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "translateSelectedText" && info.selectionText) {
-    chrome.storage.local.set({ selectedTextForTranslation: info.selectionText }, () => {
-      console.log('Selected text saved:', info.selectionText);
-      chrome.action.openPopup();
+    // 既存のミニポップアップがあれば閉じる
+    if (currentMiniPopupId !== null) {
+      chrome.windows.remove(currentMiniPopupId, () => {
+        if (chrome.runtime.lastError) {
+          console.log('Previous window was already closed');
+        }
+        createNewMiniPopup(info);
+      });
+    } else {
+      createNewMiniPopup(info);
+    }
+  }
+});
+
+// 新しいミニポップアップを作成する関数
+function createNewMiniPopup(info) {
+  chrome.storage.local.set({ selectedTextForTranslation: info.selectionText }, () => {
+    console.log('Selected text saved:', info.selectionText);
+    chrome.windows.create({
+      url: chrome.runtime.getURL('src/popup/mini-popup.html'),
+      type: 'popup',
+      width: 320,
+      height: 400,
+      left: info.x,
+      top: info.y,
+      focused: true
+    }, (window) => {
+      currentMiniPopupId = window.id;
     });
+  });
+}
+
+// ウィンドウが閉じられたときの処理
+chrome.windows.onRemoved.addListener((windowId) => {
+  if (windowId === currentMiniPopupId) {
+    currentMiniPopupId = null;
   }
 });
 
@@ -259,5 +309,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'translate') {
     handleTranslation(request, sendResponse);
     return true; // 非同期レスポンスを示す
+  } else if (request.action === 'openFullPopup') {
+    // フルポップアップを開く前に既存のミニポップアップを閉じる
+    if (currentMiniPopupId !== null) {
+      chrome.windows.remove(currentMiniPopupId, () => {
+        chrome.action.openPopup();
+      });
+    } else {
+      chrome.action.openPopup();
+    }
   }
 });

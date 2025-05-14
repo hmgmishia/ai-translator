@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Translator Mini</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles/mini-popup.css">
+</head>
+<body>
+  <div class="mini-container">
+    <div class="mini-translation-section">
+      <div class="mini-language-selectors">
+        <select id="mini-source-language">
+          <option value="auto">自動検出</option>
+          <option value="en">英語</option>
+          <option value="ja">日本語</option>
+          <option value="es">スペイン語</option>
+          <option value="fr">フランス語</option>
+          <option value="de">ドイツ語</option>
+          <option value="zh-CN">中国語（簡体）</option>
+          <option value="ko">韓国語</option>
+        </select>
+        <button id="mini-swap-languages" title="言語を入れ替え">⇄</button>
+        <select id="mini-target-language">
+          <option value="en">英語</option>
+          <option value="ja" selected>日本語</option>
+          <option value="es">スペイン語</option>
+          <option value="fr">フランス語</option>
+          <option value="de">ドイツ語</option>
+          <option value="zh-CN">中国語（簡体）</option>
+          <option value="ko">韓国語</option>
+        </select>
+      </div>
+
+      <textarea id="mini-source-text" placeholder="翻訳するテキストを入力" readonly></textarea>
+      <textarea id="mini-translated-text" placeholder="翻訳" readonly></textarea>
+
+      <div class="mini-buttons">
+        <button id="mini-translate-button">翻訳</button>
+        <button id="mini-copy-button" title="コピー">&#x2398;</button>
+        <button id="mini-expand-button" title="フル表示">⤢</button>
+      </div>
+    </div>
+  </div>
+  <script src="mini-popup.js"></script>
+</body>
+</html> 
