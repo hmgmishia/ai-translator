@@ -399,16 +399,51 @@ document.addEventListener('DOMContentLoaded', () => {
     container.appendChild(preview);
     container.appendChild(details);
 
+    // プレビューのクリックイベント（ボタン以外の領域）
+    const historyText = preview.querySelector('.history-text');
+    historyText.addEventListener('click', () => {
+      // テキストボックスに完全な翻訳情報を反映
+      elements.inputs.sourceText.value = item.full.sourceText;
+      elements.inputs.translatedText.value = item.full.translatedText;
+      if (elements.inputs.supplementaryText) {
+        elements.inputs.supplementaryText.value = item.full.supplementaryText || '';
+      }
+
+      // 言語の選択も復元
+      elements.selects.sourceLanguage.value = item.sourceLang;
+      elements.selects.targetLanguage.value = item.targetLang;
+
+      // APIとモデルの選択も復元
+      if (elements.selects.api) {
+        elements.selects.api.value = item.api;
+        // APIの変更をトリガー
+        const event = new Event('change');
+        elements.selects.api.dispatchEvent(event);
+        
+        // モデルの選択を復元（APIの変更イベント後に実行）
+        setTimeout(() => {
+          if (elements.selects.model) {
+            elements.selects.model.value = item.model;
+          }
+        }, 100);
+      }
+
+      // スクロールをテキストエリアの先頭に移動
+      elements.inputs.sourceText.scrollTop = 0;
+      elements.inputs.translatedText.scrollTop = 0;
+    });
+
     // イベントリスナーを設定
     const showDetailsButton = preview.querySelector('.show-details-button');
-    showDetailsButton.addEventListener('click', () => {
+    showDetailsButton.addEventListener('click', (e) => {
+      e.stopPropagation(); // クリックイベントの伝播を停止
       details.classList.toggle('hidden');
       showDetailsButton.textContent = details.classList.contains('hidden') ? '詳細' : '閉じる';
     });
 
     const deleteButton = preview.querySelector('.delete-history-button');
     deleteButton.addEventListener('click', (e) => {
-      e.stopPropagation();
+      e.stopPropagation(); // クリックイベントの伝播を停止
       deleteHistoryItem(index);
     });
 

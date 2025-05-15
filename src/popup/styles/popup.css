@@ -227,6 +227,18 @@ body {
 
 .history-text {
   margin-bottom: 8px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.history-text:hover {
+  background-color: #f1f3f4;
+}
+
+.history-text:active {
+  background-color: #e8f0fe;
 }
 
 .source-text {
