@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 保存されたデータを読み込む
   function loadSavedData() {
-    chrome.storage.sync.get(['sourceLang', 'targetLang'], (data) => {
+    chrome.storage.local.get(['sourceLang', 'targetLang'], (data) => {
       if (data.sourceLang) elements.selects.sourceLanguage.value = data.sourceLang;
       if (data.targetLang) elements.selects.targetLanguage.value = data.targetLang;
     });
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 言語設定を保存
   function saveLanguageSettings() {
-    chrome.storage.sync.set({
+    chrome.storage.local.set({
       sourceLang: elements.selects.sourceLanguage.value,
       targetLang: elements.selects.targetLanguage.value
     });
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.inputs.translatedText.value = '翻訳中...';
 
     // APIキーと設定を取得
-    chrome.storage.sync.get(['apiKeyChatGPT', 'apiKeyGemini', 'selectedAPI', 'selectedModel'], async (data) => {
+    chrome.storage.local.get(['apiKeyChatGPT', 'apiKeyGemini', 'selectedAPI', 'selectedModel'], async (data) => {
       const selectedAPI = data.selectedAPI || 'gemini';
       const apiKey = selectedAPI === 'chatgpt' ? data.apiKeyChatGPT : data.apiKeyGemini;
 

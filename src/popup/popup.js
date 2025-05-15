@@ -92,13 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
       elements.selects.model.appendChild(option);
     });
 
-    chrome.storage.sync.get(['selectedModel'], (data) => {
+    chrome.storage.local.get(['selectedModel'], (data) => {
       if (data.selectedModel && apiModels.includes(data.selectedModel)) {
         elements.selects.model.value = data.selectedModel;
       } else if (apiModels.length > 0) {
         const defaultModel = apiModels[0];
         elements.selects.model.value = defaultModel;
-        chrome.storage.sync.set({ selectedModel: defaultModel });
+        chrome.storage.local.set({ selectedModel: defaultModel });
       }
     });
   }
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * APIキー、選択されたAPI、言語設定などを復元
    */
   function loadSavedData() {
-    chrome.storage.sync.get([
+    chrome.storage.local.get([
       'apiKeyChatGPT',
       'apiKeyGemini',
       'selectedAPI',
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         const defaultAPI = NAME_API_DEFAULT;
         elements.selects.api.value = defaultAPI;
-        chrome.storage.sync.set({ selectedAPI: defaultAPI });
+        chrome.storage.local.set({ selectedAPI: defaultAPI });
         updateModelSelect();
       }
       if (data.sourceLang) elements.selects.sourceLanguage.value = data.sourceLang;
@@ -159,10 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 言語関連
     elements.selects.sourceLanguage.addEventListener('change', () => {
-      chrome.storage.sync.set({ sourceLang: elements.selects.sourceLanguage.value });
+      chrome.storage.local.set({ sourceLang: elements.selects.sourceLanguage.value });
     });
     elements.selects.targetLanguage.addEventListener('change', () => {
-      chrome.storage.sync.set({ targetLang: elements.selects.targetLanguage.value });
+      chrome.storage.local.set({ targetLang: elements.selects.targetLanguage.value });
     });
     elements.buttons.swapLanguages.addEventListener('click', swapLanguages);
 
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function saveAPIKeys() {
     const apiKeyChatGPT = elements.inputs.apiKeyChatGPT.value.trim();
     const apiKeyGemini = elements.inputs.apiKeyGemini.value.trim();
-    chrome.storage.sync.set({ apiKeyChatGPT, apiKeyGemini }, () => {
+    chrome.storage.local.set({ apiKeyChatGPT, apiKeyGemini }, () => {
       alert('API keys saved!');
     });
   }
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function handleAPIChange() {
     const selectedAPI = elements.selects.api.value;
-    chrome.storage.sync.set({ selectedAPI }, () => {
+    chrome.storage.local.set({ selectedAPI }, () => {
       updateModelSelect();
     });
   }
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * 選択されたモデルを保存
    */
   function saveSelectedModel() {
-    chrome.storage.sync.set({ selectedModel: elements.selects.model.value });
+    chrome.storage.local.set({ selectedModel: elements.selects.model.value });
   }
 
   /**
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sourceLang !== 'auto') {
       elements.selects.sourceLanguage.value = targetLang;
       elements.selects.targetLanguage.value = sourceLang;
-      chrome.storage.sync.set({ sourceLang: targetLang, targetLang: sourceLang });
+      chrome.storage.local.set({ sourceLang: targetLang, targetLang: sourceLang });
     }
   }
 
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function performTranslation(config) {
     const { selectedAPI } = config;
 
-    chrome.storage.sync.get(['apiKeyChatGPT', 'apiKeyGemini'], async (keys) => {
+    chrome.storage.local.get(['apiKeyChatGPT', 'apiKeyGemini'], async (keys) => {
       const apiKey = selectedAPI === NAME_API_CHATGPT ? keys.apiKeyChatGPT : keys.apiKeyGemini;
 
       if (!apiKey) {
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * 翻訳履歴の読み込みと表示
    */
   function loadTranslationHistory() {
-    chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
+    chrome.storage.local.get([TRANSLATION_HISTORY_KEY], (result) => {
       const history = result[TRANSLATION_HISTORY_KEY] || [];
       console.log('Translation history loaded:', history);
       displayHistory(history);
@@ -448,11 +448,11 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {number} index - 削除する履歴のインデックス
    */
   function deleteHistoryItem(index) {
-    chrome.storage.sync.get([TRANSLATION_HISTORY_KEY], (result) => {
+    chrome.storage.local.get([TRANSLATION_HISTORY_KEY], (result) => {
       let history = result[TRANSLATION_HISTORY_KEY] || [];
       if (index >= 0 && index < history.length) {
         history.splice(index, 1);
-        chrome.storage.sync.set({ [TRANSLATION_HISTORY_KEY]: history }, () => {
+        chrome.storage.local.set({ [TRANSLATION_HISTORY_KEY]: history }, () => {
           console.log('Translation history item deleted.');
           displayHistory(history);
         });
@@ -464,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * 履歴のクリア
    */
   function clearHistory() {
-    chrome.storage.sync.remove(TRANSLATION_HISTORY_KEY, () => {
+    chrome.storage.local.remove(TRANSLATION_HISTORY_KEY, () => {
       console.log('Translation history cleared.');
       displayHistory([]);
     });

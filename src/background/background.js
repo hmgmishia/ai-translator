@@ -54,12 +54,12 @@ function setupContextMenu() {
  * デフォルト設定のセットアップ
  */
 function setupDefaultSettings() {
-  chrome.storage.sync.get(['selectedAPI', 'selectedModel'], (data) => {
+  chrome.storage.local.get(['selectedAPI', 'selectedModel'], (data) => {
     if (!data.selectedAPI) {
-      chrome.storage.sync.set({ selectedAPI: NAME_API_DEFAULT });
+      chrome.storage.local.set({ selectedAPI: NAME_API_DEFAULT });
     }
     if (!data.selectedModel) {
-      chrome.storage.sync.set({ selectedModel: NAME_MODEL_DEFAULT });
+      chrome.storage.local.set({ selectedModel: NAME_MODEL_DEFAULT });
     }
   });
 }
@@ -225,7 +225,7 @@ async function saveTranslationHistory(historyItem) {
     history.pop();
   }
 
-  await chrome.storage.sync.set({ [TRANSLATION_HISTORY_KEY]: history });
+  await chrome.storage.local.set({ [TRANSLATION_HISTORY_KEY]: history });
   console.log('Translation history saved:', history);
   
   notifyHistoryUpdate();
@@ -236,7 +236,7 @@ async function saveTranslationHistory(historyItem) {
  * @returns {Promise<Array>} 履歴アイテムの配列
  */
 async function getTranslationHistory() {
-  const result = await chrome.storage.sync.get([TRANSLATION_HISTORY_KEY]);
+  const result = await chrome.storage.local.get([TRANSLATION_HISTORY_KEY]);
   return result[TRANSLATION_HISTORY_KEY] || [];
 }
 
