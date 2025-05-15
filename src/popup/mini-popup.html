@@ -31,8 +31,17 @@
         </select>
       </div>
 
-      <textarea id="mini-source-text" placeholder="翻訳するテキストを入力" readonly></textarea>
-      <textarea id="mini-translated-text" placeholder="翻訳" readonly></textarea>
+      <div class="mini-text-areas">
+        <div class="text-area-container">
+          <textarea id="mini-source-text" placeholder="翻訳するテキストを入力" readonly></textarea>
+        </div>
+        <div class="text-area-container">
+          <textarea id="mini-supplementary-text" placeholder="補足情報（翻訳時の追加コンテキスト）"></textarea>
+        </div>
+        <div class="text-area-container">
+          <textarea id="mini-translated-text" placeholder="翻訳" readonly></textarea>
+        </div>
+      </div>
 
       <div class="mini-buttons">
         <button id="mini-translate-button">翻訳</button>

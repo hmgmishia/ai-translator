@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const elements = {
     inputs: {
       sourceText: document.getElementById('mini-source-text'),
+      supplementaryText: document.getElementById('mini-supplementary-text'),
       translatedText: document.getElementById('mini-translated-text')
     },
     selects: {
@@ -22,13 +23,36 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSavedData();
     setupEventListeners();
     loadSelectedText();
+    setupResizeObserver();
+  }
+
+  // リサイズオブザーバーの設定
+  function setupResizeObserver() {
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const height = entry.contentRect.height;
+        const width = entry.contentRect.width;
+        
+        // テキストエリアの高さを調整
+        const textAreas = document.querySelectorAll('.text-area-container');
+        const totalHeight = height - 120; // ヘッダーとボタンの高さを考慮
+        const areaHeight = totalHeight / 3;
+        
+        textAreas.forEach(area => {
+          area.style.height = `${areaHeight}px`;
+        });
+      }
+    });
+
+    resizeObserver.observe(document.body);
   }
 
   // 保存されたデータを読み込む
   function loadSavedData() {
-    chrome.storage.local.get(['sourceLang', 'targetLang'], (data) => {
+    chrome.storage.local.get(['sourceLang', 'targetLang', 'supplementaryText'], (data) => {
       if (data.sourceLang) elements.selects.sourceLanguage.value = data.sourceLang;
       if (data.targetLang) elements.selects.targetLanguage.value = data.targetLang;
+      if (data.supplementaryText) elements.inputs.supplementaryText.value = data.supplementaryText;
     });
   }
 
@@ -51,6 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.buttons.expand.addEventListener('click', expandToFullPopup);
     elements.selects.sourceLanguage.addEventListener('change', saveLanguageSettings);
     elements.selects.targetLanguage.addEventListener('change', saveLanguageSettings);
+    elements.inputs.supplementaryText.addEventListener('input', saveSupplementaryText);
+  }
+
+  // 補足情報を保存
+  function saveSupplementaryText() {
+    chrome.storage.local.set({
+      supplementaryText: elements.inputs.supplementaryText.value
+    });
   }
 
   // 言語設定を保存
@@ -97,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.runtime.sendMessage({
         action: 'translate',
         text: sourceText,
+        supplementaryText: elements.inputs.supplementaryText.value.trim(),
         sourceLang: elements.selects.sourceLanguage.value,
         targetLang: elements.selects.targetLanguage.value,
         api: selectedAPI,
@@ -145,7 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function expandToFullPopup() {
     chrome.storage.local.set({
       expandedText: elements.inputs.sourceText.value,
-      expandedTranslation: elements.inputs.translatedText.value
+      expandedTranslation: elements.inputs.translatedText.value,
+      expandedSupplementaryText: elements.inputs.supplementaryText.value
     }, () => {
       chrome.runtime.sendMessage({ action: 'openFullPopup' });
     });
