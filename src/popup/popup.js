@@ -324,17 +324,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * 履歴の表示
+   * 翻訳履歴を表示
    * @param {Array} history - 履歴アイテムの配列
    */
   function displayHistory(history) {
-    elements.history.innerHTML = '';
-    
-    if (history.length === 0) {
-      elements.history.innerHTML = '<p>No translation history yet.</p>';
+    if (!elements.history) return;
+
+    if (!history || history.length === 0) {
+      elements.history.innerHTML = '<div class="no-history">履歴はありません</div>';
       return;
     }
 
+    elements.history.innerHTML = '';
     history.forEach((item, index) => {
       const historyItem = createHistoryItem(item, index);
       elements.history.appendChild(historyItem);
@@ -344,62 +345,74 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * 履歴アイテムのHTML要素を作成
    * @param {Object} item - 履歴アイテム
-   * @param {number} index - インデックス
+   * @param {number} index - 配列内のインデックス
    * @returns {HTMLElement} 履歴アイテムの要素
    */
   function createHistoryItem(item, index) {
-    const historyItemDiv = document.createElement('div');
-    historyItemDiv.classList.add('history-item');
+    const container = document.createElement('div');
+    container.className = 'history-item';
+    
+    // プレビュー部分を作成
+    const preview = document.createElement('div');
+    preview.className = 'history-preview';
+    preview.innerHTML = `
+      <div class="history-text">
+        <div class="source-text">${escapeHTML(item.preview.sourceText)}</div>
+        <div class="translated-text">${escapeHTML(item.preview.translatedText)}</div>
+      </div>
+      <div class="history-meta">
+        <span>${getLanguageName(item.sourceLang)} → ${getLanguageName(item.targetLang)}</span>
+        <span class="history-timestamp">${formatTimestamp(item.timestamp)}</span>
+      </div>
+      <div class="history-actions">
+        <button class="show-details-button" title="詳細を表示">詳細</button>
+        <button class="delete-history-button" title="この履歴を削除">✕</button>
+      </div>
+    `;
 
-    const content = `
-      <div class="history-content">
-        <button class="history-item-delete">
-          <span class="button-text">削除</span>
-        </button>
-        <div class="history-languages">
-          ${getLanguageName(item.sourceLang)} → ${getLanguageName(item.targetLang)}
+    // 詳細表示部分を作成（初期状態は非表示）
+    const details = document.createElement('div');
+    details.className = 'history-details hidden';
+    details.innerHTML = `
+      <div class="details-content">
+        <div class="details-section">
+          <h4>翻訳元テキスト:</h4>
+          <div class="details-text">${escapeHTML(item.full.sourceText)}</div>
         </div>
-        <div class="history-source">${escapeHTML(item.sourceText)}</div>
-        <div class="history-translated">${escapeHTML(item.translatedText)}</div>
-        <div class="history-meta">
-          <div class="history-model">${item.api}</div>
-          <div class="history-time">${formatTimestamp(item.timestamp)}</div>
+        ${item.full.supplementaryText ? `
+          <div class="details-section">
+            <h4>補足情報:</h4>
+            <div class="details-text">${escapeHTML(item.full.supplementaryText)}</div>
+          </div>
+        ` : ''}
+        <div class="details-section">
+          <h4>翻訳結果:</h4>
+          <div class="details-text">${escapeHTML(item.full.translatedText)}</div>
+        </div>
+        <div class="details-meta">
+          <div>API: ${item.api}</div>
+          <div>Model: ${item.model}</div>
         </div>
       </div>
     `;
 
-    historyItemDiv.innerHTML = content;
+    container.appendChild(preview);
+    container.appendChild(details);
 
-    // 履歴アイテムのクリックイベント（削除ボタン以外）
-    const historyContent = historyItemDiv.querySelector('.history-content');
-    historyContent.addEventListener('click', () => {
-      elements.inputs.sourceText.value = item.sourceText;
-      elements.inputs.translatedText.value = item.translatedText;
-      if (elements.inputs.supplementaryText) {
-        elements.inputs.supplementaryText.value = item.supplementaryText || '';
-      }
-      // 言語の選択も復元
-      if (item.sourceLang && item.targetLang) {
-        elements.selects.sourceLanguage.value = item.sourceLang;
-        elements.selects.targetLanguage.value = item.targetLang;
-      }
+    // イベントリスナーを設定
+    const showDetailsButton = preview.querySelector('.show-details-button');
+    showDetailsButton.addEventListener('click', () => {
+      details.classList.toggle('hidden');
+      showDetailsButton.textContent = details.classList.contains('hidden') ? '詳細' : '閉じる';
     });
 
-    // 削除ボタンのイベント
-    const deleteButton = historyItemDiv.querySelector('.history-item-delete');
-    deleteButton.addEventListener('click', async (event) => {
-      event.stopPropagation();
-      
-      // 削除アニメーションの追加
-      historyItemDiv.classList.add('deleting');
-      
-      // アニメーション完了を待ってから削除
-      await new Promise(resolve => setTimeout(resolve, 300)); // アニメーションの時間と同じ
-      
+    const deleteButton = preview.querySelector('.delete-history-button');
+    deleteButton.addEventListener('click', (e) => {
+      e.stopPropagation();
       deleteHistoryItem(index);
     });
 
-    return historyItemDiv;
+    return container;
   }
 
   /**

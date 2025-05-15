@@ -207,11 +207,31 @@ function extractTranslation(data, api) {
 async function saveTranslationHistory(historyItem) {
   const history = await getTranslationHistory();
   
-  // 機密情報を含まない履歴アイテムを作成
-  const safeHistoryItem = {
-    sourceText: historyItem.sourceText.substring(0, 1000), // 長いテキストを制限
-    translatedText: historyItem.translatedText.substring(0, 1000),
-    supplementaryText: historyItem.supplementaryText ? historyItem.supplementaryText.substring(0, 500) : '',
+  // 文字数制限の定数
+  const MAX_TEXT_LENGTH = 50;
+
+  // 文字列を制限する関数
+  function truncateText(text, maxLength) {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  }
+  
+  // 履歴アイテムを作成（表示用の短いテキストと完全なテキストの両方を保存）
+  const historyEntry = {
+    // 表示用の短いテキスト
+    preview: {
+      sourceText: truncateText(historyItem.sourceText, MAX_TEXT_LENGTH),
+      translatedText: truncateText(historyItem.translatedText, MAX_TEXT_LENGTH),
+      supplementaryText: truncateText(historyItem.supplementaryText, MAX_TEXT_LENGTH),
+    },
+    // 完全なテキスト
+    full: {
+      sourceText: historyItem.sourceText,
+      translatedText: historyItem.translatedText,
+      supplementaryText: historyItem.supplementaryText || '',
+    },
+    // 共通情報
     sourceLang: historyItem.sourceLang,
     targetLang: historyItem.targetLang,
     api: historyItem.api,
@@ -219,14 +239,14 @@ async function saveTranslationHistory(historyItem) {
     timestamp: Date.now()
   };
 
-  history.unshift(safeHistoryItem);
+  history.unshift(historyEntry);
 
   if (history.length > MAX_HISTORY_ITEMS) {
     history.pop();
   }
 
   await chrome.storage.local.set({ [TRANSLATION_HISTORY_KEY]: history });
-  console.log('Translation history saved:', history);
+  console.log('翻訳履歴を保存しました:', history);
   
   notifyHistoryUpdate();
 }
