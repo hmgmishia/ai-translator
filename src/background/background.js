@@ -26,9 +26,6 @@ const LANGUAGE_MAP = {
   'ko': 'Korean'
 };
 
-// 現在のミニポップアップのウィンドウIDを保持
-let currentMiniPopupId = null;
-
 /**
  * 拡張機能の初期化を行う
  * コンテキストメニューとデフォルト設定をセットアップ
@@ -40,27 +37,12 @@ async function initialize() {
 }
 
 /**
- * コンテキストメニューのセットアップ
- */
-function setupContextMenu() {
-  chrome.contextMenus.create({
-    id: "translateSelectedText",
-    title: "選択したテキストを翻訳",
-    contexts: ["selection"]
-  });
-}
-
-/**
- * デフォルト設定のセットアップ
+ * デフォルト設定を構成
+ * モデルの初期選択などを設定
  */
 function setupDefaultSettings() {
-  chrome.storage.local.get(['selectedAPI', 'selectedModel'], (data) => {
-    if (!data.selectedAPI) {
-      chrome.storage.local.set({ selectedAPI: NAME_API_DEFAULT });
-    }
-    if (!data.selectedModel) {
-      chrome.storage.local.set({ selectedModel: NAME_MODEL_DEFAULT });
-    }
+  chrome.storage.local.set({ selectedModel: NAME_MODEL_DEFAULT }, () => {
+    console.log('Default model set to', NAME_MODEL_DEFAULT);
   });
 }
 
@@ -207,31 +189,11 @@ function extractTranslation(data, api) {
 async function saveTranslationHistory(historyItem) {
   const history = await getTranslationHistory();
   
-  // 文字数制限の定数
-  const MAX_TEXT_LENGTH = 50;
-
-  // 文字列を制限する関数
-  function truncateText(text, maxLength) {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  }
-  
-  // 履歴アイテムを作成（表示用の短いテキストと完全なテキストの両方を保存）
-  const historyEntry = {
-    // 表示用の短いテキスト
-    preview: {
-      sourceText: truncateText(historyItem.sourceText, MAX_TEXT_LENGTH),
-      translatedText: truncateText(historyItem.translatedText, MAX_TEXT_LENGTH),
-      supplementaryText: truncateText(historyItem.supplementaryText, MAX_TEXT_LENGTH),
-    },
-    // 完全なテキスト
-    full: {
-      sourceText: historyItem.sourceText,
-      translatedText: historyItem.translatedText,
-      supplementaryText: historyItem.supplementaryText || '',
-    },
-    // 共通情報
+  // 機密情報を含まない履歴アイテムを作成
+  const safeHistoryItem = {
+    sourceText: historyItem.sourceText.substring(0, 1000), // 長いテキストを制限
+    translatedText: historyItem.translatedText.substring(0, 1000),
+    supplementaryText: historyItem.supplementaryText ? historyItem.supplementaryText.substring(0, 500) : '',
     sourceLang: historyItem.sourceLang,
     targetLang: historyItem.targetLang,
     api: historyItem.api,
@@ -239,14 +201,14 @@ async function saveTranslationHistory(historyItem) {
     timestamp: Date.now()
   };
 
-  history.unshift(historyEntry);
+  history.unshift(safeHistoryItem);
 
   if (history.length > MAX_HISTORY_ITEMS) {
     history.pop();
   }
 
   await chrome.storage.local.set({ [TRANSLATION_HISTORY_KEY]: history });
-  console.log('翻訳履歴を保存しました:', history);
+  console.log('Translation history saved:', history);
   
   notifyHistoryUpdate();
 }
@@ -286,42 +248,10 @@ chrome.runtime.onStartup.addListener(initialize);
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "translateSelectedText" && info.selectionText) {
-    // 既存のミニポップアップがあれば閉じる
-    if (currentMiniPopupId !== null) {
-      chrome.windows.remove(currentMiniPopupId, () => {
-        if (chrome.runtime.lastError) {
-          console.log('Previous window was already closed');
-        }
-        createNewMiniPopup(info);
-      });
-    } else {
-      createNewMiniPopup(info);
-    }
-  }
-});
-
-// 新しいミニポップアップを作成する関数
-function createNewMiniPopup(info) {
-  chrome.storage.local.set({ selectedTextForTranslation: info.selectionText }, () => {
-    console.log('Selected text saved:', info.selectionText);
-    chrome.windows.create({
-      url: chrome.runtime.getURL('src/popup/mini-popup.html'),
-      type: 'popup',
-      width: 320,
-      height: 400,
-      left: info.x,
-      top: info.y,
-      focused: true
-    }, (window) => {
-      currentMiniPopupId = window.id;
+    chrome.storage.local.set({ selectedTextForTranslation: info.selectionText }, () => {
+      console.log('Selected text saved:', info.selectionText);
+      chrome.action.openPopup();
     });
-  });
-}
-
-// ウィンドウが閉じられたときの処理
-chrome.windows.onRemoved.addListener((windowId) => {
-  if (windowId === currentMiniPopupId) {
-    currentMiniPopupId = null;
   }
 });
 
@@ -329,14 +259,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'translate') {
     handleTranslation(request, sendResponse);
     return true; // 非同期レスポンスを示す
-  } else if (request.action === 'openFullPopup') {
-    // フルポップアップを開く前に既存のミニポップアップを閉じる
-    if (currentMiniPopupId !== null) {
-      chrome.windows.remove(currentMiniPopupId, () => {
-        chrome.action.openPopup();
-      });
-    } else {
-      chrome.action.openPopup();
-    }
   }
 });
